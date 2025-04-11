@@ -1,30 +1,26 @@
-import os
-from src import utils  # Asumiendo que la carpeta 'src' está en el PYTHONPATH o en el mismo nivel
+from src.data_loader import get_dataloaders
+from src.visualization import visualize_examples, visualize_pixel_distribution, print_class_distribution
+from src.train import get_model, train_model
+from config import DEVICE
 
 def main():
-    # Obtener los datasets y dataloaders configurados
-    (main_dataset, secondary_dataset, combined_train_dataset, 
-     train_dataset_main, val_dataset_main, train_loader, val_loader) = utils.get_dataloaders(batch_size=32)
+    # Obtener datasets y DataLoaders
+    main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader = get_dataloaders()
     
-    # Mostrar el mapping de clases del dataset principal
+    # Mostrar mapping de clases y distribución de datos
     print("Mapping de clases principal:", main_dataset.class_to_idx)
+    print_class_distribution(main_dataset)
     
-    # Cargar y mostrar los archivos de descripción
-    utils.load_descriptions()
-    
-    # Imprimir la distribución de imágenes en el dataset principal
-    utils.print_class_distribution(main_dataset)
-    
-    # Visualizar una cuadrícula de ejemplos
-    utils.visualize_examples(train_loader)
-    
-    # Tomar un batch y visualizar la distribución de píxeles
+    # Visualizar ejemplos y distribución de píxeles
+    visualize_examples(train_loader)
     dataiter = iter(train_loader)
     images, _ = next(dataiter)
-    utils.visualize_pixel_distribution(images)
+    visualize_pixel_distribution(images)
     
-    # Aquí puedes continuar con el entrenamiento y validación usando train_loader y val_loader.
-    # Por ejemplo, puedes iterar sobre las épocas e invocar el entrenamiento del modelo.
-
-if __name__ == "__main__":
+    # Configurar y entrenar el modelo
+    num_classes = len(main_dataset.class_to_idx)
+    model = get_model(num_classes)
+    train_model(model, train_loader, val_loader)
+    
+if __name__ == '__main__':
     main()
