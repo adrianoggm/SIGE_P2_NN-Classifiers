@@ -1,38 +1,26 @@
-import os
-import torch
-from torchvision import datasets, transforms, models
-from torch.utils.data import DataLoader, random_split
-import torch.nn as nn
-import torch.optim as optim
+from src.data_loader import get_dataloaders
+from src.visualization import visualize_examples, visualize_pixel_distribution, print_class_distribution
+from src.train import get_model, train_model
+from config import DEVICE
 
-# Configuración
-DATA_DIR = './starting-package/data x20'
-BATCH_SIZE = 32
-EPOCHS = 10
-LR = 0.001
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-# Transformaciones
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
-
-# Cargar dataset con estructura de carpetas
-dataset = datasets.ImageFolder(DATA_DIR, transform=transform)
-
-print(dataset.class_to_idx)
-
-# Dividir el dataset en 80% entrenamiento y 20% validación
-train_size = int(0.8 * len(dataset))
-val_size = len(dataset) - train_size
-train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
-
-# DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
-
-# Verifica una muestra
-for images, labels in train_loader:
-    print(f"Imagenes: {images.shape}, Labels: {labels}")
-    break
+def main():
+    # Obtener datasets y DataLoaders
+    main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader = get_dataloaders()
+    
+    # Mostrar mapping de clases y distribución de datos
+    print("Mapping de clases principal:", main_dataset.class_to_idx)
+    print_class_distribution(main_dataset)
+    
+    # Visualizar ejemplos y distribución de píxeles
+    visualize_examples(train_loader)
+    dataiter = iter(train_loader)
+    images, _ = next(dataiter)
+    visualize_pixel_distribution(images)
+    
+    # Configurar y entrenar el modelo
+    num_classes = len(main_dataset.class_to_idx)
+    model = get_model(num_classes)
+    train_model(model, train_loader, val_loader)
+    
+if __name__ == '__main__':
+    main()
