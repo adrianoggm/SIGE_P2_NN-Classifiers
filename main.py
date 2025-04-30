@@ -5,7 +5,7 @@ from config import DEVICE
 
 def main():
     # Obtener datasets y DataLoaders
-    main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader = get_dataloaders()
+    main_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader = get_dataloaders()
     
     # Mostrar mapping de clases y distribución de datos
     print("Mapping de clases principal:", main_dataset.class_to_idx)
