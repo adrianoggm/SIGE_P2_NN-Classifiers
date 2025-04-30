@@ -24,15 +24,8 @@ def get_transformations():
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
         transforms.ToTensor(),
     ])
-    underscale_transform = transforms.Compose([
-        transforms.Resize((112, 112), interpolation=InterpolationMode.BILINEAR),
-        transforms.ToTensor(),
-    ])
-    overscale_transform = transforms.Compose([
-        transforms.Resize((448, 448), interpolation=InterpolationMode.BILINEAR),
-        transforms.ToTensor(),
-    ])
-    return standard_transform, aug_transform, underscale_transform, overscale_transform
+
+    return standard_transform, aug_transform
 
 def get_dataset_configs(main_dataset_choice=None):
     """
@@ -46,26 +39,22 @@ def get_dataset_configs(main_dataset_choice=None):
     if main_dataset_choice is None:
         main_dataset_choice = MAIN_DATASET
 
-    standard_transform, aug_transform, underscale_transform, overscale_transform = get_transformations()
+    standard_transform, aug_transform = get_transformations()
 
     if main_dataset_choice == "x20":
         main_data_dir = DATA_DIR_X20
         secondary_data_dir = DATA_DIR_X200
         main_transform = standard_transform
         main_aug_transform = aug_transform
-        secondary_transform = underscale_transform
-        secondary_aug_transform = secondary_transform  # Se puede ampliar con augmentación si se desea
     elif main_dataset_choice == "x200":
         main_data_dir = DATA_DIR_X200
         secondary_data_dir = DATA_DIR_X20
         main_transform = standard_transform
         main_aug_transform = aug_transform
-        secondary_transform = overscale_transform
-        secondary_aug_transform = secondary_transform
     else:
         raise ValueError("La variable MAIN_DATASET debe ser 'x20' o 'x200'.")
 
-    return main_data_dir, secondary_data_dir, main_transform, main_aug_transform, secondary_transform, secondary_aug_transform
+    return main_data_dir, secondary_data_dir, main_transform, main_aug_transform
 
 def load_datasets():
     """
@@ -77,20 +66,22 @@ def load_datasets():
     Además, divide el main_dataset en entrenamiento y validación (80/20).
     """
     (main_data_dir, secondary_data_dir,
-     main_transform, main_aug_transform,
-     secondary_transform, secondary_aug_transform) = get_dataset_configs()
+     main_transform, main_aug_transform) = get_dataset_configs()
 
     main_dataset = datasets.ImageFolder(main_data_dir, transform=main_transform)
-    secondary_dataset = datasets.ImageFolder(secondary_data_dir, transform=secondary_transform)
     dataset_main_aug = datasets.ImageFolder(main_data_dir, transform=main_aug_transform)
-    dataset_secondary_aug = datasets.ImageFolder(secondary_data_dir, transform=secondary_aug_transform)
-    combined_train_dataset = ConcatDataset([dataset_main_aug, dataset_secondary_aug])
     
     train_size = int(0.8 * len(main_dataset))
     val_size = len(main_dataset) - train_size
     train_dataset_main, val_dataset_main = random_split(main_dataset, [train_size, val_size])
     
-    return main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main
+    return main_dataset, train_dataset_main, val_dataset_main
+
+def custom_collate(batch):
+    images = [item[0] for item in batch]
+    labels = [item[1] for item in batch]
+    return images, labels  # Devuelve listas en lugar de tensores apilados
+
 
 def get_dataloaders():
     """
@@ -99,7 +90,7 @@ def get_dataloaders():
       main_dataset, secondary_dataset, combined_train_dataset,
       train_dataset_main, val_dataset_main, train_loader, val_loader
     """
-    main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main = load_datasets()
-    train_loader = DataLoader(combined_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    main_dataset, train_dataset_main, val_dataset_main = load_datasets()
+    train_loader = DataLoader(train_dataset_main, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset_main, batch_size=BATCH_SIZE, shuffle=False)
-    return main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader
+    return main_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader
