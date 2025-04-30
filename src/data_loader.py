@@ -92,6 +92,12 @@ def load_datasets():
     
     return main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main
 
+def custom_collate(batch):
+    images = [item[0] for item in batch]
+    labels = [item[1] for item in batch]
+    return images, labels  # Devuelve listas en lugar de tensores apilados
+
+
 def get_dataloaders():
     """
     Configura y retorna los DataLoaders para entrenamiento y validación.
@@ -100,6 +106,6 @@ def get_dataloaders():
       train_dataset_main, val_dataset_main, train_loader, val_loader
     """
     main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main = load_datasets()
-    train_loader = DataLoader(combined_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = DataLoader(combined_train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=custom_collate) # MIRAR
     val_loader = DataLoader(val_dataset_main, batch_size=BATCH_SIZE, shuffle=False)
     return main_dataset, secondary_dataset, combined_train_dataset, train_dataset_main, val_dataset_main, train_loader, val_loader
