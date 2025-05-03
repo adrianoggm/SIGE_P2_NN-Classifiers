@@ -33,7 +33,7 @@ def main():
     # Configurar y entrenar el modelo
     num_classes = len(full_dataset.class_to_idx)
     model = get_model(num_classes)
-    #train_model(model, train_loader, val_loader)
+    train_model(model, train_loader, val_loader)
 
 if __name__ == '__main__':
     main()
