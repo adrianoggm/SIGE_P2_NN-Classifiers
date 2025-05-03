@@ -7,21 +7,36 @@ from config import DATA_DIR_X20, DATA_DIR_X200, BATCH_SIZE, MAIN_DATASET
 
 def get_transformations():
     """
-    Define y retorna las transformaciones básicas:
-      - Estándar (resize a 224x224 con interpolación bilineal)
-      - Augmentación (random crop, flip, etc.)
-      - Underscaling (resize a 112x112)
-      - Overscaling (resize a 448x448)
+    - standard_transform: resize 224×224 + ToTensor
+    - aug_transform: random mirror, rotación ±15° o escala zoom (0.8–1.2) + ToTensor
     """
     standard_transform = transforms.Compose([
         transforms.Resize((224, 224), interpolation=InterpolationMode.BILINEAR),
         transforms.ToTensor(),
     ])
+
     aug_transform = transforms.Compose([
-        transforms.RandomResizedCrop(224, interpolation=InterpolationMode.BILINEAR),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(20),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        # mantenemos siempre 224×224
+        transforms.Resize((224, 224), interpolation=InterpolationMode.BILINEAR),
+
+        # elegimos ALEATORIAMENTE UNA de estas 3 operaciones:
+        transforms.RandomChoice([
+            # 1) Espejo vertical puro
+            transforms.RandomHorizontalFlip(p=1.0),
+
+            # 2) Rotación aleatoria entre -15° y +15°
+            transforms.RandomRotation(degrees=15, interpolation=InterpolationMode.BILINEAR),
+
+            # 3) Escalado (zoom in/out) centrado,
+            #    scale <1 → zoom out (se ve más contexto),
+            #    scale >1 → zoom in (se ve detalle)
+            transforms.RandomAffine(
+                degrees=0,               # sin rotación aquí
+                scale=(0.8, 1.2),        # rango de escalado
+                interpolation=InterpolationMode.BILINEAR
+            ),
+        ]),
+
         transforms.ToTensor(),
     ])
 
