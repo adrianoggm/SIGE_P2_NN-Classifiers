@@ -1,6 +1,6 @@
 from src.data_loader import get_dataloaders,load_datasets
 from src.visualization import visualize_examples, visualize_pixel_distribution, print_class_distribution
-from src.train import get_model, train_model
+from src.train import get_model, hyperparameter_tuning, train_model
 from config import DEVICE
 
 def main():
@@ -19,7 +19,6 @@ def main():
 
     # Mostrar la distribución de valores de píxeles de un lote de imágenes
     visualize_pixel_distribution(images)
-
     
     print("Tamaño del conjunto de entrenamiento combinado:", len(combined_train_dataset))
     print("Conjuntos incluidos en el conjunto de entrenamiento combinado:")
@@ -37,9 +36,12 @@ def main():
         print(f"Clase {class_name}: {count}")
 
     # Configurar y entrenar el modelo
-    num_classes = len(full_dataset.class_to_idx)
-    model = get_model(num_classes)
-    train_model(model, train_loader, val_loader)
+    # num_classes = len(full_dataset.class_to_idx)
+    # model = get_model(num_classes)
+    # train_model(model, train_loader, val_loader)
+
+    best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset)
+    print("Hiperparámetros óptimos:", best_hparams)
 
 if __name__ == '__main__':
     main()
