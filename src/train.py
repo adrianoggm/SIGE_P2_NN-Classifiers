@@ -1,30 +1,31 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from torchvision import models
-from config import DEVICE, EPOCHS, LEARNING_RATE
+from itertools import product
+from config import DEVICE, EPOCHS
 
 def get_model(num_classes):
-    """
-    Retorna un modelo ResNet18 preentrenado, ajustado a num_classes.
-    """
     model = models.resnet18(pretrained=True)
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     return model.to(DEVICE)
 
-def train_model(model, train_loader, val_loader):
-    """
-    Ejecuta el entrenamiento y validación del modelo.
-    """
+def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    
+    if optimizer_name == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    elif optimizer_name == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
+    best_val_acc = 0.0
+
     for epoch in range(EPOCHS):
-        print(f"Epoch {epoch+1}/{EPOCHS}")
         model.train()
         running_loss = 0.0
-        
-        # Entrenamiento
+
         for images, labels in train_loader:
             images, labels = images.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
@@ -33,11 +34,7 @@ def train_model(model, train_loader, val_loader):
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * images.size(0)
-            
-        epoch_loss = running_loss / len(train_loader.dataset)
-        print(f"Train Loss: {epoch_loss:.4f}")
-        
-        # Validación
+
         model.eval()
         correct = 0
         total = 0
@@ -49,4 +46,53 @@ def train_model(model, train_loader, val_loader):
                 total += labels.size(0)
                 correct += (preds == labels).sum().item()
         val_accuracy = correct / total * 100
-        print(f"Validation Accuracy: {val_accuracy:.2f}%\n")
+
+        if save_best and val_accuracy > best_val_acc:
+            best_val_acc = val_accuracy
+            torch.save(model.state_dict(), 'best_model.pth')
+
+    return best_val_acc
+
+def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
+    param_grid = {
+        'learning_rate': [1e-3, 1e-4],
+        'batch_size': [32, 64],
+        'optimizer': ['adam', 'sgd']
+    }
+
+    param_combinations = list(product(*param_grid.values()))
+    num_classes = len(full_dataset.class_to_idx)
+
+    best_config = None
+    best_accuracy = 0.0
+
+    for lr, batch_size, opt in param_combinations:
+        print(f"\nProbando: lr={lr}, batch_size={batch_size}, optimizer={opt}")
+
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+
+        model = get_model(num_classes)
+        val_acc = train_model(model, train_loader, val_loader, learning_rate=lr, optimizer_name=opt)
+
+        print(f"Validación: {val_acc:.2f}%")
+
+        if val_acc > best_accuracy:
+            best_accuracy = val_acc
+            best_config = {
+                'learning_rate': lr,
+                'batch_size': batch_size,
+                'optimizer': opt
+            }
+
+    print(f"\nMejor configuración encontrada: {best_config}")
+    print(f"Precisión en validación: {best_accuracy:.2f}%")
+
+    # 🔁 Entrenar nuevamente usando los mejores hiperparámetros
+    print("\n🏁 Entrenando modelo final con mejores hiperparámetros...")
+    best_train_loader = DataLoader(train_dataset, batch_size=best_config['batch_size'], shuffle=True)
+    best_val_loader = DataLoader(val_dataset, batch_size=best_config['batch_size'])
+    final_model = get_model(num_classes)
+    train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
+
+    return best_config
