@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def visualize_examples(train_loader, num_examples=8):
+def visualize_examples(train_loader, num_examples=12):
     """
     Muestra una cuadrícula de ejemplos extraídos del train_loader para inspeccionar las transformaciones.
     """
@@ -49,3 +49,13 @@ def print_class_distribution(dataset):
     print("Distribución de imágenes en el dataset principal:")
     for label, count in class_counts.items():
         print(f"Clase {label}: {count} imágenes")
+
+    # Mostrar la distribución de imágenes por clase
+    plt.figure(figsize=(10, 5))
+    plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
+    plt.xlabel("Clase")
+    plt.ylabel("Número de imágenes")
+    plt.title("Distribución de imágenes por clase")
+    plt.xticks(rotation=45)
+    plt.show()
+    

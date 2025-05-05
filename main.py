@@ -11,15 +11,20 @@ def main():
     # Mostrar mapping de clases y distribución global
     print("Mapping de clases principal:", full_dataset.class_to_idx)
     print_class_distribution(full_dataset)
+
     # Visualizar ejemplos y distribución de píxeles del conjunto de entrenamiento
     visualize_examples(train_loader)
     dataiter = iter(train_loader)
     images, _ = next(dataiter)
+
+    # Mostrar la distribución de valores de píxeles de un lote de imágenes
     visualize_pixel_distribution(images)
+
+    
     print("Tamaño del conjunto de entrenamiento combinado:", len(combined_train_dataset))
-    print("Conjuntos incluidos en el conjunto de entrenamiento combinado:", combined_train_dataset.datasets)
+    print("Conjuntos incluidos en el conjunto de entrenamiento combinado:")
     for i, subset in enumerate(combined_train_dataset.datasets):
-        print(f"Tamaño del subconjunto {i + 1}:", len(subset))
+        print(f"\tTamaño del subconjunto {i + 1}:", len(subset))
 
     # Calcular y mostrar el tamaño del conjunto de entrenamiento por clase
     class_counts = {class_name: 0 for class_name in full_dataset.class_to_idx.keys()}
@@ -30,6 +35,7 @@ def main():
     print("Tamaño del conjunto de entrenamiento por clase:")
     for class_name, count in class_counts.items():
         print(f"Clase {class_name}: {count}")
+
     # Configurar y entrenar el modelo
     num_classes = len(full_dataset.class_to_idx)
     model = get_model(num_classes)
