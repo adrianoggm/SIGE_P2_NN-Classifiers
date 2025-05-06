@@ -175,3 +175,11 @@ cython_debug/
 
 starting-package/
 .myenv/
+
+# Ignorar carpetas de datos grandes
+/data\ additional/
+/data\ x20/
+/data\ x200/
+
+/x20/
+/x200/
