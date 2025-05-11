@@ -1,15 +1,19 @@
 import torch
 import torch.nn as nn
+from src.customCNN import CustomCNN
 import torch.optim as optim
 from torchvision import models
 from config import DEVICE, EPOCHS, LEARNING_RATE
 
-def get_model(num_classes):
-    """
-    Retorna un modelo ResNet18 preentrenado, ajustado a num_classes.
-    """
-    model = models.resnet18(pretrained=True)
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
+def get_model(num_classes, model_type='resnet'):
+    if model_type == 'resnet':
+        model = models.resnet18(pretrained=True)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+    elif model_type == 'custom':
+        model = CustomCNN(num_classes)
+    else:
+        raise ValueError(f"Modelo no soportado: {model_type}")
+
     return model.to(DEVICE)
 
 def train_model(model, train_loader, val_loader):
