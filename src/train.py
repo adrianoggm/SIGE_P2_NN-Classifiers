@@ -6,10 +6,30 @@ from torchvision import models
 from itertools import product
 from config import DEVICE, EPOCHS
 
-def get_model(num_classes):
-    model = models.resnet18(pretrained=True)
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
+from src.customCNN import CustomCNN
+
+def get_model(num_classes, model_type='resnet'):
+    if model_type == 'resnet':
+        # Cargamos modelo preentrenado
+        model = models.resnet18(pretrained=True)
+
+        # Congelamos todas las capas excepto las últimas
+        for param in model.parameters():
+            param.requires_grad = False
+
+        # Añadimos nuevas capas
+        model.fc = nn.Sequential(
+            nn.Linear(model.fc.in_features, 512),  # Capa FC intermedia
+            nn.ReLU(),  # Función de activación ReLU
+            nn.Dropout(0.5),  # Dropout para evitar overfitting
+            nn.Linear(512, num_classes)  # Capa final con salida de clases
+        )
+    elif model_type == 'custom':
+        model = CustomCNN(num_classes)
+    else:
+        raise ValueError(f"Modelo no soportado: {model_type}")
     return model.to(DEVICE)
+
 
 def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True):
     criterion = nn.CrossEntropyLoss()
@@ -35,6 +55,9 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
             optimizer.step()
             running_loss += loss.item() * images.size(0)
 
+        # Calcular la pérdida media en el entrenamiento
+        train_loss = running_loss / len(train_loader.dataset)
+
         model.eval()
         correct = 0
         total = 0
@@ -46,6 +69,12 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
                 total += labels.size(0)
                 correct += (preds == labels).sum().item()
         val_accuracy = correct / total * 100
+
+
+        print(f"Epoch [{epoch+1}/{EPOCHS}], "
+              f"Train Loss: {train_loss:.4f}, "
+              f"Validation Accuracy: {val_accuracy:.2f}%")
+
 
         if save_best and val_accuracy > best_val_acc:
             best_val_acc = val_accuracy
