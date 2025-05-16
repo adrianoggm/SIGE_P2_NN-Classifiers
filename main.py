@@ -36,9 +36,10 @@ def main():
         print(f"Clase {class_name}: {count}")
 
     # Configurar y entrenar el modelo
-    # num_classes = len(full_dataset.class_to_idx)
-    # model = get_model(num_classes)
-    # train_model(model, train_loader, val_loader)
+    num_classes = len(full_dataset.class_to_idx)
+    model = get_model(num_classes, model_type='resnet')
+
+    train_model(model, train_loader, val_loader, learning_rate=1e-3, optimizer_name='adam', save_best=True)
 
     best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset)
     print("Hiperparámetros óptimos:", best_hparams)
