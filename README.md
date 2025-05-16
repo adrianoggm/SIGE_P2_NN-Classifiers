@@ -100,8 +100,278 @@ Module: src/train.py
       - Validation accuracy
     (for each epoch)
 
-
-Important link https://chatgpt.com/s/dr_681a1e17644481919a5dbf1a75c5d12c
+(venv) PS C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers> python .\main_explicable.py
+Mapping de clases principal: {'001.Black_footed_Albatross': 0, '002.Laysan_Albatross': 1, '003.Sooty_Albatross': 2, '004.Groove_billed_Ani': 3, '005.Crested_Auklet': 4, '006.Least_Auklet': 5, '007.Parakeet_Auklet': 6, '008.Rhinoceros_Auklet': 7, '009.Brewer_Blackbird': 8, '010.Red_winged_Blackbird': 9, '011.Rusty_Blackbird': 10, '012.Yellow_headed_Blackbird': 11, '013.Bobolink': 12, '014.Indigo_Bunting': 13, '015.Lazuli_Bunting': 14, '016.Painted_Bunting': 15, '017.Cardinal': 16, '018.Spotted_Catbird': 17, '019.Gray_Catbird': 18, '020.Yellow_breasted_Chat': 19}
+Distribución de imágenes en el dataset principal:
+Clase 0: 60 imágenes
+Clase 1: 60 imágenes
+Clase 2: 58 imágenes
+Clase 3: 60 imágenes
+Clase 4: 44 imágenes
+Clase 5: 41 imágenes
+Clase 6: 53 imágenes
+Clase 7: 48 imágenes
+Clase 8: 59 imágenes
+Clase 9: 60 imágenes
+Clase 10: 60 imágenes
+Clase 11: 56 imágenes
+Clase 12: 60 imágenes
+Clase 13: 60 imágenes
+Clase 14: 58 imágenes
+Clase 15: 58 imágenes
+Clase 16: 57 imágenes
+Clase 17: 45 imágenes
+Clase 18: 59 imágenes
+Clase 19: 59 imágenes
+Tamaño del conjunto de entrenamiento combinado: 1784
+Conjuntos incluidos en el conjunto de entrenamiento combinado:
+        Tamaño del subconjunto 1: 892
+        Tamaño del subconjunto 2: 892
+Tamaño del conjunto de entrenamiento por clase:
+Clase 001.Black_footed_Albatross: 98
+Clase 002.Laysan_Albatross: 92
+Clase 003.Sooty_Albatross: 98
+Clase 004.Groove_billed_Ani: 92
+Clase 005.Crested_Auklet: 66
+Clase 006.Least_Auklet: 64
+Clase 007.Parakeet_Auklet: 78
+Clase 008.Rhinoceros_Auklet: 74
+Clase 009.Brewer_Blackbird: 92
+Clase 010.Red_winged_Blackbird: 96
+Clase 011.Rusty_Blackbird: 98
+Clase 012.Yellow_headed_Blackbird: 98
+Clase 013.Bobolink: 88
+Clase 014.Indigo_Bunting: 100
+Clase 015.Lazuli_Bunting: 94
+Clase 016.Painted_Bunting: 96
+Clase 017.Cardinal: 94
+Clase 018.Spotted_Catbird: 74
+Clase 019.Gray_Catbird: 96
+Clase 020.Yellow_breasted_Chat: 96
+Traceback (most recent call last):
+  File "C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\main_explicable.py", line 41, in <module>
+    main()
+  File "C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\main_explicable.py", line 37, in main
+    best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset, attr_dim=full_dataset.attr_dim)
+TypeError: hyperparameter_tuning() got an unexpected keyword argument 'attr_dim'
+(venv) PS C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers> python .\main_explicable.py
+Mapping de clases principal: {'001.Black_footed_Albatross': 0, '002.Laysan_Albatross': 1, '003.Sooty_Albatross': 2, '004.Groove_billed_Ani': 3, '005.Crested_Auklet': 4, '006.Least_Auklet': 5, '007.Parakeet_Auklet': 6, '008.Rhinoceros_Auklet': 7, '009.Brewer_Blackbird': 8, '010.Red_winged_Blackbird': 9, '011.Rusty_Blackbird': 10, '012.Yellow_headed_Blackbird': 11, '013.Bobolink': 12, '014.Indigo_Bunting': 13, '015.Lazuli_Bunting': 14, '016.Painted_Bunting': 15, '017.Cardinal': 16, '018.Spotted_Catbird': 17, '019.Gray_Catbird': 18, '020.Yellow_breasted_Chat': 19}
+Distribución de imágenes en el dataset principal:
+Clase 0: 60 imágenes
+Clase 1: 60 imágenes
+Clase 2: 58 imágenes
+Clase 3: 60 imágenes
+Clase 4: 44 imágenes
+Clase 5: 41 imágenes
+Clase 6: 53 imágenes
+Clase 7: 48 imágenes
+Clase 8: 59 imágenes
+Clase 9: 60 imágenes
+Clase 10: 60 imágenes
+Clase 11: 56 imágenes
+Clase 12: 60 imágenes
+Clase 13: 60 imágenes
+Clase 14: 58 imágenes
+Clase 15: 58 imágenes
+Clase 16: 57 imágenes
+Clase 17: 45 imágenes
+Clase 18: 59 imágenes
+Clase 19: 59 imágenes
+Tamaño del conjunto de entrenamiento combinado: 1784
+Conjuntos incluidos en el conjunto de entrenamiento combinado:
+        Tamaño del subconjunto 1: 892
+        Tamaño del subconjunto 2: 892
+Tamaño del conjunto de entrenamiento por clase:
+Clase 001.Black_footed_Albatross: 98
+Clase 002.Laysan_Albatross: 92
+Clase 003.Sooty_Albatross: 98
+Clase 004.Groove_billed_Ani: 92
+Clase 005.Crested_Auklet: 66
+Clase 006.Least_Auklet: 64
+Clase 007.Parakeet_Auklet: 78
+Clase 008.Rhinoceros_Auklet: 74
+Clase 009.Brewer_Blackbird: 92
+Clase 010.Red_winged_Blackbird: 96
+Clase 011.Rusty_Blackbird: 98
+Clase 012.Yellow_headed_Blackbird: 98
+Clase 013.Bobolink: 88
+Clase 014.Indigo_Bunting: 100
+Clase 015.Lazuli_Bunting: 94
+Clase 016.Painted_Bunting: 96
+Clase 017.Cardinal: 94
+Clase 018.Spotted_Catbird: 74
+Clase 019.Gray_Catbird: 96
+Clase 020.Yellow_breasted_Chat: 96
+Traceback (most recent call last):
+  File "C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\main_explicable.py", line 42, in <module>
+    main()
+  File "C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\main_explicable.py", line 37, in main
+    best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset)
+  File "C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\src\explicable_train.py", line 110, in hyperparameter_tuning
+    num_classes = len(full_dataset.class_to_idx)
+AttributeError: 'CUBMultimodalDataset' object has no attribute 'class_to_idx'
+(venv) PS C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers> python .\main_explicable.py
+Mapping de clases principal: {'001.Black_footed_Albatross': 0, '002.Laysan_Albatross': 1, '003.Sooty_Albatross': 2, '004.Groove_billed_Ani': 3, '005.Crested_Auklet': 4, '006.Least_Auklet': 5, '007.Parakeet_Auklet': 6, '008.Rhinoceros_Auklet': 7, '009.Brewer_Blackbird': 8, '010.Red_winged_Blackbird': 9, '011.Rusty_Blackbird': 10, '012.Yellow_headed_Blackbird': 11, '013.Bobolink': 12, '014.Indigo_Bunting': 13, '015.Lazuli_Bunting': 14, '016.Painted_Bunting': 15, '017.Cardinal': 16, '018.Spotted_Catbird': 17, '019.Gray_Catbird': 18, '020.Yellow_breasted_Chat': 19}
+Distribución de imágenes en el dataset principal:
+Clase 0: 60 imágenes
+Clase 1: 60 imágenes
+Clase 2: 58 imágenes
+Clase 3: 60 imágenes
+Clase 4: 44 imágenes
+Clase 5: 41 imágenes
+Clase 6: 53 imágenes
+Clase 7: 48 imágenes
+Clase 8: 59 imágenes
+Clase 9: 60 imágenes
+Clase 10: 60 imágenes
+Clase 11: 56 imágenes
+Clase 12: 60 imágenes
+Clase 13: 60 imágenes
+Clase 14: 58 imágenes
+Clase 15: 58 imágenes
+Clase 16: 57 imágenes
+Clase 17: 45 imágenes
+Clase 18: 59 imágenes
+Clase 19: 59 imágenes
+Tamaño del conjunto de entrenamiento combinado: 1784
+Conjuntos incluidos en el conjunto de entrenamiento combinado:
+        Tamaño del subconjunto 1: 892
+        Tamaño del subconjunto 2: 892
+Tamaño del conjunto de entrenamiento por clase:
+Clase 001.Black_footed_Albatross: 98
+Clase 002.Laysan_Albatross: 92
+Clase 003.Sooty_Albatross: 98
+Clase 004.Groove_billed_Ani: 92
+Clase 005.Crested_Auklet: 66
+Clase 006.Least_Auklet: 64
+Clase 007.Parakeet_Auklet: 78
+Clase 008.Rhinoceros_Auklet: 74
+Clase 009.Brewer_Blackbird: 92
+Clase 010.Red_winged_Blackbird: 96
+Clase 011.Rusty_Blackbird: 98
+Clase 012.Yellow_headed_Blackbird: 98
+Clase 012.Yellow_headed_Blackbird: 98
+Clase 013.Bobolink: 88
+Clase 014.Indigo_Bunting: 100
+Clase 015.Lazuli_Bunting: 94
+Clase 015.Lazuli_Bunting: 94
+Clase 016.Painted_Bunting: 96
+Clase 017.Cardinal: 94
+Clase 018.Spotted_Catbird: 74
+Clase 019.Gray_Catbird: 96
+Clase 020.Yellow_breasted_Chat: 96
+Probando: lr=0.001, batch_size=32, optimizer=adam
+C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\venv\lib\site-packages\torchvision\models\_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+C:\Users\adria\OneDrive\Documentos\SIGE_P2_NN-Classifiers\venv\lib\site-packages\torchvision\models\_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=ResNet18_Weights.IMAGENET1K_V1`. You can also use `weights=ResNet18_Weights.DEFAULT` to get the most up-to-date weights.      
+  warnings.warn(msg)
+Epoch 1/10 - Val Acc: 22.42%
+Epoch 2/10 - Val Acc: 36.32%
+Epoch 3/10 - Val Acc: 29.60%
+Epoch 4/10 - Val Acc: 48.43%
+Epoch 5/10 - Val Acc: 28.25%
+Epoch 6/10 - Val Acc: 68.61%
+Epoch 7/10 - Val Acc: 71.30%
+Epoch 8/10 - Val Acc: 61.43%
+Epoch 9/10 - Val Acc: 60.99%
+Epoch 10/10 - Val Acc: 65.02%
+Validación: 71.30%
+Probando: lr=0.001, batch_size=32, optimizer=sgd
+Epoch 1/10 - Val Acc: 16.14%
+Epoch 2/10 - Val Acc: 34.98%
+Epoch 3/10 - Val Acc: 54.26%
+Epoch 4/10 - Val Acc: 62.33%
+Epoch 5/10 - Val Acc: 72.65%
+Epoch 6/10 - Val Acc: 78.03%
+Epoch 7/10 - Val Acc: 82.06%
+Epoch 8/10 - Val Acc: 82.06%
+Epoch 9/10 - Val Acc: 81.61%
+Epoch 10/10 - Val Acc: 82.06%
+Validación: 82.06%
+Probando: lr=0.001, batch_size=64, optimizer=adam
+Epoch 1/10 - Val Acc: 43.95%
+Epoch 2/10 - Val Acc: 66.82%
+Epoch 3/10 - Val Acc: 47.53%
+Epoch 4/10 - Val Acc: 64.57%
+Epoch 5/10 - Val Acc: 62.78%
+Epoch 6/10 - Val Acc: 62.78%
+Epoch 7/10 - Val Acc: 76.68%
+Epoch 8/10 - Val Acc: 69.51%
+Epoch 9/10 - Val Acc: 52.02%
+Epoch 10/10 - Val Acc: 48.43%
+Validación: 76.68%
+Probando: lr=0.001, batch_size=64, optimizer=sgd
+Epoch 1/10 - Val Acc: 8.97%
+Epoch 2/10 - Val Acc: 21.52%
+Epoch 3/10 - Val Acc: 34.08%
+Epoch 4/10 - Val Acc: 47.53%
+Epoch 5/10 - Val Acc: 49.33%
+Epoch 6/10 - Val Acc: 55.16%
+Epoch 7/10 - Val Acc: 60.54%
+Epoch 8/10 - Val Acc: 65.02%
+Epoch 9/10 - Val Acc: 67.26%
+Epoch 10/10 - Val Acc: 71.75%
+Validación: 71.75%
+Probando: lr=0.0001, batch_size=32, optimizer=adam
+Epoch 1/10 - Val Acc: 61.88%
+Epoch 2/10 - Val Acc: 75.34%
+Epoch 3/10 - Val Acc: 81.17%
+Epoch 4/10 - Val Acc: 83.41%
+Epoch 5/10 - Val Acc: 82.51%
+Epoch 6/10 - Val Acc: 85.20%
+Epoch 7/10 - Val Acc: 84.75%
+Epoch 8/10 - Val Acc: 84.30%
+Epoch 9/10 - Val Acc: 83.41%
+Epoch 10/10 - Val Acc: 85.20%
+Validación: 85.20%
+Probando: lr=0.0001, batch_size=32, optimizer=sgd
+Epoch 1/10 - Val Acc: 8.07%
+Epoch 2/10 - Val Acc: 10.31%
+Epoch 3/10 - Val Acc: 12.56%
+Epoch 4/10 - Val Acc: 14.35%
+Epoch 5/10 - Val Acc: 17.49%
+Epoch 6/10 - Val Acc: 18.39%
+Epoch 7/10 - Val Acc: 22.87%
+Epoch 8/10 - Val Acc: 25.11%
+Epoch 9/10 - Val Acc: 26.91%
+Epoch 10/10 - Val Acc: 28.25%
+Validación: 28.25%
+Probando: lr=0.0001, batch_size=64, optimizer=adam
+Epoch 1/10 - Val Acc: 41.26%
+Epoch 2/10 - Val Acc: 69.51%
+Epoch 3/10 - Val Acc: 79.37%
+Epoch 4/10 - Val Acc: 79.82%
+Epoch 5/10 - Val Acc: 82.96%
+Epoch 6/10 - Val Acc: 84.30%
+Epoch 7/10 - Val Acc: 86.10%
+Epoch 8/10 - Val Acc: 85.20%
+Epoch 9/10 - Val Acc: 86.10%
+Epoch 10/10 - Val Acc: 86.55%
+Validación: 86.55%
+Probando: lr=0.0001, batch_size=64, optimizer=sgd
+Epoch 1/10 - Val Acc: 4.48%
+Epoch 2/10 - Val Acc: 5.38%
+Epoch 3/10 - Val Acc: 6.28%
+Epoch 4/10 - Val Acc: 6.73%
+Epoch 5/10 - Val Acc: 7.17%
+Epoch 6/10 - Val Acc: 8.52%
+Epoch 7/10 - Val Acc: 9.87%
+Epoch 8/10 - Val Acc: 10.76%
+Epoch 9/10 - Val Acc: 11.21%
+Epoch 10/10 - Val Acc: 12.56%
+Validación: 12.56%
+Mejor configuración: {'learning_rate': 0.0001, 'batch_size': 64, 'optimizer': 'adam'} con Val Acc: 86.55%
+Epoch 1/10 - Val Acc: 38.57%
+Epoch 2/10 - Val Acc: 67.26%
+Epoch 3/10 - Val Acc: 78.48%
+Epoch 4/10 - Val Acc: 78.03%
+Epoch 5/10 - Val Acc: 82.96%
+Epoch 6/10 - Val Acc: 83.41%
+Epoch 7/10 - Val Acc: 82.51%
+Epoch 8/10 - Val Acc: 82.96%
+Epoch 9/10 - Val Acc: 83.86%
+Epoch 10/10 - Val Acc: 84.75%
+Hiperparámetros óptimos: {'learning_rate': 0.0001, 'batch_size': 64, 'optimizer': 'adam'}
 
 
 
