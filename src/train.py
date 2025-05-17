@@ -10,26 +10,39 @@ from src.customCNN import CustomCNN
 
 def get_model(num_classes, model_type='resnet'):
     if model_type == 'resnet':
-        # Cargamos modelo preentrenado
+        # ResNet-18 pretrained
         model = models.resnet18(pretrained=True)
-
-        # Congelamos todas las capas excepto las últimas
         for param in model.parameters():
             param.requires_grad = False
-
-        # Añadimos nuevas capas
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 512),  # Capa FC intermedia
-            nn.ReLU(),  # Función de activación ReLU
-            nn.Dropout(0.5),  # Dropout para evitar overfitting
-            nn.Linear(512, num_classes)  # Capa final con salida de clases
+            nn.Linear(model.fc.in_features, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, num_classes)
         )
+
+    elif model_type == 'efficientnet_b4':
+        # EfficientNet-B4 pretrained
+        model = models.efficientnet_b4(pretrained=True)
+        # Congelamos backbone
+        for param in model.parameters():
+            param.requires_grad = False
+        # Sustituimos la cabeza (classifier)
+        # En torchvision, classifier es [Dropout, Linear]
+        in_features = model.classifier[1].in_features
+        model.classifier = nn.Sequential(
+            nn.Dropout(p=0.5, inplace=True),
+            nn.Linear(in_features, num_classes)
+        )
+
     elif model_type == 'custom':
+        from src.customCNN import CustomCNN
         model = CustomCNN(num_classes)
+
     else:
         raise ValueError(f"Modelo no soportado: {model_type}")
-    return model.to(DEVICE)
 
+    return model.to(DEVICE)
 
 def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True):
     criterion = nn.CrossEntropyLoss()
@@ -125,3 +138,4 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
     train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
 
     return best_config
+
