@@ -11,7 +11,7 @@ IMAGES_TXT_PATH         = os.path.join(BASE_DIR, 'starting-package', 'data addit
 
 # Parámetros de entrenamiento
 BATCH_SIZE = 32
-EPOCHS = 25
+EPOCHS = 15
 LEARNING_RATE = 0.001
 
 # Variable de entorno para elegir el dataset principal (por defecto "x20")
