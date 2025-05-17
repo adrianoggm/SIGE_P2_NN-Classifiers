@@ -11,7 +11,7 @@ from src.customCNN import CustomCNN
 def get_model(num_classes, model_type='resnet'):
     if model_type == 'resnet':
         # ResNet-18 pretrained
-        model = models.resnet18(pretrained=True)
+        model = models.resnet50(pretrained=True)
         for param in model.parameters():
             param.requires_grad = False
         model.fc = nn.Sequential(
@@ -95,7 +95,8 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
 
     return best_val_acc
 
-def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
+def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
+                          model_type='resnet'):
     param_grid = {
         'learning_rate': [1e-3, 1e-4],
         'batch_size': [32, 64],
@@ -109,13 +110,17 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
     best_accuracy = 0.0
 
     for lr, batch_size, opt in param_combinations:
-        print(f"\nProbando: lr={lr}, batch_size={batch_size}, optimizer={opt}")
+        print(f"\nProbando: lr={lr}, batch_size={batch_size}, optimizer={opt}, modelo={model_type}")
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+        val_loader   = DataLoader(val_dataset,   batch_size=batch_size)
 
-        model = get_model(num_classes)
-        val_acc = train_model(model, train_loader, val_loader, learning_rate=lr, optimizer_name=opt)
+        # Aquí pasamos model_type
+        model = get_model(num_classes, model_type=model_type)
+        val_acc = train_model(model,
+                              train_loader, val_loader,
+                              learning_rate=lr,
+                              optimizer_name=opt)
 
         print(f"Validación: {val_acc:.2f}%")
 
@@ -127,15 +132,21 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
                 'optimizer': opt
             }
 
-    print(f"\nMejor configuración encontrada: {best_config}")
+    print(f"\nMejor configuración encontrada para {model_type}: {best_config}")
     print(f"Precisión en validación: {best_accuracy:.2f}%")
 
-    # 🔁 Entrenar nuevamente usando los mejores hiperparámetros
-    print("\n🏁 Entrenando modelo final con mejores hiperparámetros...")
-    best_train_loader = DataLoader(train_dataset, batch_size=best_config['batch_size'], shuffle=True)
-    best_val_loader = DataLoader(val_dataset, batch_size=best_config['batch_size'])
-    final_model = get_model(num_classes)
-    train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
+    # 🏁 Entrenar modelo final con los mejores hiperparámetros
+    best_train_loader = DataLoader(train_dataset,
+                                   batch_size=best_config['batch_size'],
+                                   shuffle=True)
+    best_val_loader   = DataLoader(val_dataset,
+                                   batch_size=best_config['batch_size'])
+    final_model = get_model(num_classes, model_type=model_type)
+    train_model(final_model,
+                best_train_loader, best_val_loader,
+                best_config['learning_rate'],
+                best_config['optimizer'])
 
     return best_config
+
 
