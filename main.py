@@ -41,7 +41,11 @@ def main():
 
     train_model(model, train_loader, val_loader, learning_rate=1e-3, optimizer_name='adam', save_best=True)
 
-    best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset)
+    
+    best_hparams = hyperparameter_tuning(train_dataset,
+                                         val_dataset,
+                                         full_dataset,
+                                         model_type='efficientnet_b4')
     print("Hiperparámetros óptimos:", best_hparams)
 
 if __name__ == '__main__':
