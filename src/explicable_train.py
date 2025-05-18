@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import models
+import wandb 
 
 # Para Grad-CAM
 from pytorch_grad_cam import GradCAM
@@ -48,7 +49,7 @@ class MultiModalResNet(nn.Module):
         return self.classifier(fused)
 
 
-def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True):
+def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True, use_wandb=False):
     criterion = nn.CrossEntropyLoss()
     if optimizer_name == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -73,6 +74,8 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
             optimizer.step()
             running_loss += loss.item() * images.size(0)
 
+        train_loss = running_loss / len(train_loader.dataset)
+
         model.eval()
         correct, total = 0, 0
         with torch.no_grad():
@@ -83,6 +86,13 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
                 total += labels.size(0)
                 correct += (preds == labels).sum().item()
         val_accuracy = correct / total * 100
+
+        if use_wandb:
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": train_loss,
+                "val_accuracy": val_accuracy
+            })
 
         if save_best and val_accuracy > best_val_acc:
             best_val_acc = val_accuracy
@@ -120,6 +130,16 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
     best_accuracy = 0.0
     for lr, batch_size, opt in combinations:
         print(f'Probando: lr={lr}, batch_size={batch_size}, optimizer={opt}')
+        wandb.init(
+            project="tuning-clasificacion-explicable",
+            config={
+                "learning_rate": lr,
+                "batch_size": batch_size,
+                "optimizer": opt,
+                "epochs": EPOCHS
+            },
+            reinit=True
+        )       
         train_loader = DataLoader(train_dataset, batch_size=batch_size,
                                   shuffle=True, collate_fn=custom_collate)
         val_loader = DataLoader(val_dataset, batch_size=batch_size,
@@ -127,8 +147,11 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
 
         model = MultiModalResNet(num_classes, attr_dim).to(DEVICE)
         val_acc = train_model(model, train_loader, val_loader,
-                              learning_rate=lr, optimizer_name=opt)
+                              learning_rate=lr, optimizer_name=opt, use_wandb=True)
+        
         print(f'Validación: {val_acc:.2f}%')
+        wandb.log({"final_val_accuracy": val_acc})
+        wandb.finish()  # 👈 Cerrar el run
 
         if val_acc > best_accuracy:
             best_accuracy = val_acc
@@ -144,6 +167,11 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset):
     final_model = MultiModalResNet(num_classes, attr_dim).to(DEVICE)
     train_model(final_model, final_train, final_val,
                 best_config['learning_rate'], best_config['optimizer'])
+    
+    # Guardar el modelo final
+    wandb.init(project="tuning-clasificacion-explicable", name="final_model", config=best_config, use_wandb=True)
+    train_model(final_model, final_train, final_val, best_config['learning_rate'], best_config['optimizer'])
+    wandb.finish()
 
     return best_config
 

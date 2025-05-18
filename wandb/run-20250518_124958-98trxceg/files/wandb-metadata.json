@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.11.0-25-generic-x86_64-with-glibc2.39",
+  "python": "CPython 3.12.3",
+  "startedAt": "2025-05-18T10:49:58.915339Z",
+  "program": "/home/sergio/Documentos/Master/SIGE-MUII/Practicas/P2/SIGE_P2_NN-Classifiers/main_explicable.py",
+  "codePath": "main_explicable.py",
+  "git": {
+    "remote": "https://github.com/adrianoggm/SIGE_P2_NN-Classifiers",
+    "commit": "b3d470f352684001521a91842470072efce92d56"
+  },
+  "email": "sergiohervas18@gmail.com",
+  "root": "/home/sergio/Documentos/Master/SIGE-MUII/Practicas/P2/SIGE_P2_NN-Classifiers",
+  "host": "sergio-Ubuntu",
+  "executable": "/home/sergio/Documentos/Master/SIGE-MUII/Practicas/P1/.myenv/bin/python",
+  "codePathLocal": "main_explicable.py",
+  "cpu_count": 4,
+  "cpu_count_logical": 8,
+  "gpu": "NVIDIA GeForce MX350",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "210241560576",
+      "used": "187167477760"
+    }
+  },
+  "memory": {
+    "total": "16448380928"
+  },
+  "cpu": {
+    "count": 4,
+    "countLogical": 8
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce MX350",
+      "memoryTotal": "2147483648",
+      "cudaCores": 640,
+      "architecture": "Pascal"
+    }
+  ],
+  "cudaVersion": "12.2"
+}
