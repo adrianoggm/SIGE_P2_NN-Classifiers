@@ -1,6 +1,6 @@
 from src.data_loader import get_dataloaders,load_datasets
 from src.visualization import visualize_examples, visualize_pixel_distribution, print_class_distribution
-from src.train import get_model, hyperparameter_tuning, train_model
+from src.train import get_model, hyperparameter_tuning, hyperparameter_tuning_optuna, train_model
 from config import DEVICE
 
 def main():
@@ -39,14 +39,25 @@ def main():
     num_classes = len(full_dataset.class_to_idx)
     model = get_model(num_classes, model_type='resnet')
 
-    train_model(model, train_loader, val_loader, learning_rate=1e-3, optimizer_name='adam', save_best=True, use_wandb=False)
+    # train_model(model, train_loader, val_loader, learning_rate=1e-3, optimizer_name='adam', save_best=True, use_wandb=False)
 
     
-    best_hparams = hyperparameter_tuning(train_dataset,
-                                        val_dataset,
-                                        full_dataset,
-                                        model_type='resnet',)
-    print("Hiperparámetros óptimos:", best_hparams)
+    # best_hparams = hyperparameter_tuning(train_dataset,
+    #                                     val_dataset,
+    #                                     full_dataset,
+    #                                     model_type='resnet',)
+    # print("Hiperparámetros óptimos:", best_hparams)
+
+    best_config = hyperparameter_tuning_optuna(
+        train_dataset, 
+        val_dataset, 
+        full_dataset,
+        model_type='resnet',
+        n_trials=30  # Número de configuraciones a probar
+    )
+
+    print("Hiperparámetros óptimos:", best_config)
+
 
 if __name__ == '__main__':
     main()

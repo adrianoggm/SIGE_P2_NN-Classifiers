@@ -7,6 +7,8 @@ from itertools import product
 from config import DEVICE, EPOCHS
 import wandb 
 from src.customCNN import CustomCNN
+import optuna
+from optuna.trial import TrialState
 
 def get_model(num_classes, model_type='resnet'):
     if model_type == 'resnet':
@@ -103,6 +105,7 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
 
 def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
                           model_type='resnet'):
+
     param_grid = {
         'learning_rate': [1e-3, 1e-4],
         'batch_size': [32, 64],
@@ -178,3 +181,189 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
     return best_config
 
 
+
+
+
+def objective(trial, train_dataset, val_dataset, num_classes, model_type='resnet'):
+    torch.cuda.empty_cache()
+
+    # Definir el espacio de búsqueda de hiperparámetros
+    lr = trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True)
+    batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
+    optimizer_name = trial.suggest_categorical('optimizer', ['adam', 'sgd'])
+    
+    # Para optimizadores más avanzados podríamos añadir:
+    if optimizer_name == 'sgd':
+        momentum = trial.suggest_float('momentum', 0.8, 0.99)
+    
+    # Para redes más complejas podríamos ajustar parámetros de arquitectura
+    if model_type == 'custom':
+        dropout_rate = trial.suggest_float('dropout_rate', 0.1, 0.5)
+    
+    # Configurar WandB para este trial
+    wandb_config = {
+        "learning_rate": lr,
+        "batch_size": batch_size,
+        "optimizer": optimizer_name,
+        "model_type": model_type,
+        "trial_number": trial.number
+    }
+    
+    if optimizer_name == 'sgd':
+        wandb_config["momentum"] = momentum
+    if model_type == 'custom':
+        wandb_config["dropout_rate"] = dropout_rate
+    
+    wandb.init(
+        project="optuna-tuning-clasificacion",
+        config=wandb_config,
+        reinit=True,
+        group=f"model_{model_type}",
+        name=f"trial_{trial.number}"
+    )
+
+    # Crear data loaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size)
+
+    # Crear modelo
+    model = get_model(num_classes, model_type=model_type)
+    
+    # Configurar optimizador
+    if optimizer_name == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    
+    criterion = nn.CrossEntropyLoss()
+
+    best_val_acc = 0.0
+
+    for epoch in range(EPOCHS):
+        model.train()
+        running_loss = 0.0
+
+        for images, labels in train_loader:
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item() * images.size(0)
+
+        train_loss = running_loss / len(train_loader.dataset)
+
+        # Validación
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(DEVICE), labels.to(DEVICE)
+                outputs = model(images)
+                _, preds = torch.max(outputs, 1)
+                total += labels.size(0)
+                correct += (preds == labels).sum().item()
+        
+        val_accuracy = correct / total * 100
+
+        # Reportar métricas a Optuna y WandB
+        trial.report(val_accuracy, epoch)
+        wandb.log({
+            "epoch": epoch + 1,
+            "train_loss": train_loss,
+            "val_accuracy": val_accuracy
+        })
+
+        # Manejar pruning (podado) de trials que no van bien
+        if trial.should_prune():
+            wandb.finish()
+            raise optuna.exceptions.TrialPruned()
+
+        if val_accuracy > best_val_acc:
+            best_val_acc = val_accuracy
+    
+        print(f'Epoch {epoch+1}/{EPOCHS} - Val Acc: {val_accuracy:.2f}%')
+
+    wandb.finish()
+    return best_val_acc
+
+def hyperparameter_tuning_optuna(train_dataset, val_dataset, full_dataset, 
+                                model_type='resnet', n_trials=20):
+    
+    num_classes = len(full_dataset.class_to_idx)
+    
+    # Función objetivo parcial para Optuna
+    func = lambda trial: objective(trial, train_dataset, val_dataset, 
+                                  num_classes, model_type)
+    
+    # Crear estudio Optuna
+    study = optuna.create_study(
+        direction='maximize',
+        sampler=optuna.samplers.TPESampler(),
+        pruner = optuna.pruners.MedianPruner(
+            n_startup_trials=5,  # Más trials completos para tener una buena mediana
+            n_warmup_steps=5,    # Esperar hasta la época 10 para empezar a evaluar
+            interval_steps=2      # Revisar cada 3 épocas (no todas)
+        )
+    )
+    
+    # Ejecutar optimización
+    study.optimize(func, n_trials=n_trials, timeout=None)
+    
+    # Mostrar resultados
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+
+    print("\nResultados del estudio:")
+    print(f"Número de trials completados: {len(complete_trials)}")
+    print(f"Número de trials podados: {len(pruned_trials)}")
+    print(f"Mejor trial:")
+    trial = study.best_trial
+    print(f"  Valor (val_accuracy): {trial.value}")
+    print("  Parámetros: ")
+    for key, value in trial.params.items():
+        print(f"    {key}: {value}")
+    
+    # Entrenar modelo final con los mejores hiperparámetros
+    best_params = trial.params
+    print("\nEntrenando modelo final con los mejores hiperparámetros...")
+    
+    best_train_loader = DataLoader(
+        train_dataset,
+        batch_size=best_params['batch_size'],
+        shuffle=True
+    )
+    best_val_loader = DataLoader(
+        val_dataset,
+        batch_size=best_params['batch_size']
+    )
+    
+    final_model = get_model(num_classes, model_type=model_type)
+    
+    # Configurar WandB para el modelo final
+    wandb.init(
+        project="optuna-tuning-clasificacion",
+        name=f"final_model_{model_type}",
+        config=best_params,
+        group=f"model_{model_type}_final"
+    )
+    
+    # Entrenar modelo final
+    train_model(
+        final_model,
+        best_train_loader,
+        best_val_loader,
+        best_params['learning_rate'],
+        best_params['optimizer'],
+        use_wandb=True
+    )
+    
+    # Guardar modelo
+    torch.save(final_model.state_dict(), f'best_model_{model_type}.pth')
+    wandb.save(f'best_model_{model_type}.pth')
+    
+    wandb.finish()
+    
+    return best_params
