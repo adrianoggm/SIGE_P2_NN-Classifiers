@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import models
 from itertools import product
 from config import DEVICE, EPOCHS
-
+import wandb 
 from src.customCNN import CustomCNN
 
 def get_model(num_classes, model_type='resnet'):
@@ -44,7 +44,7 @@ def get_model(num_classes, model_type='resnet'):
 
     return model.to(DEVICE)
 
-def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True):
+def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True, use_wandb=False):
     criterion = nn.CrossEntropyLoss()
     if optimizer_name == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -88,6 +88,12 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
               f"Train Loss: {train_loss:.4f}, "
               f"Validation Accuracy: {val_accuracy:.2f}%")
 
+        if use_wandb:
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": train_loss,
+                "val_accuracy": val_accuracy
+            })
 
         if save_best and val_accuracy > best_val_acc:
             best_val_acc = val_accuracy
@@ -112,6 +118,18 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
     for lr, batch_size, opt in param_combinations:
         print(f"\nProbando: lr={lr}, batch_size={batch_size}, optimizer={opt}, modelo={model_type}")
 
+        wandb.init(
+            project="tuning-clasificacion",
+            config={
+                "learning_rate": lr,
+                "batch_size": batch_size,
+                "optimizer": opt,
+                "model_type": model_type,
+                "epochs": EPOCHS
+            },
+            reinit=True 
+        )
+
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader   = DataLoader(val_dataset,   batch_size=batch_size)
 
@@ -120,8 +138,13 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
         val_acc = train_model(model,
                               train_loader, val_loader,
                               learning_rate=lr,
-                              optimizer_name=opt)
+                              optimizer_name=opt,
+                              use_wandb=True)
 
+
+        wandb.log({"final_val_accuracy": val_acc}) 
+        wandb.finish() 
+        
         print(f"Validación: {val_acc:.2f}%")
 
         if val_acc > best_accuracy:
@@ -146,6 +169,11 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
                 best_train_loader, best_val_loader,
                 best_config['learning_rate'],
                 best_config['optimizer'])
+
+    # Guardar el modelo final
+    wandb.init(project="tuning-clasificacion", name="final_model", config=best_config)
+    train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
+    wandb.finish()
 
     return best_config
 
