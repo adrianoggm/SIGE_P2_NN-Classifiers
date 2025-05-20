@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Script para visualizar Grad-CAM sobre ejemplos del dataset CUB multimodal.
+Script para visualizar Grad-CAM y LIME sobre ejemplos del dataset CUB multimodal.
 """
 import os
 import torch
 import matplotlib.pyplot as plt
 from config import DEVICE
 from src.explicable_data_loader import load_datasets, get_dataloaders
-from src.explicable_train import MultiModalResNet, generate_gradcam
+from src.explicable_train import MultiModalResNet, generate_gradcam, generate_lime_explanation, visualize_combined_explanations
 
 
 def main():
@@ -16,7 +16,6 @@ def main():
     _, val_loader = get_dataloaders()
 
     # 2) Configurar modelo y cargar pesos entrenados
-    # Usar img_folder.class_to_idx para número de clases
     num_classes = len(full_ds.img_folder.class_to_idx)
     attr_dim = full_ds.attr_dim
     model = MultiModalResNet(num_classes, attr_dim).to(DEVICE)
@@ -30,33 +29,37 @@ def main():
     dataiter = iter(val_loader)
     images, attrs, labels = next(dataiter)
 
-    # 4) Visualizar Grad-CAM para los primeros ejemplos
-    n_examples = min(6, images.size(0))
-    plt.figure(figsize=(12, 8))
+    # 4) Visualizar Grad-CAM y LIME para los primeros ejemplos
+    n_examples = min(4, images.size(0))
     for i in range(n_examples):
         img = images[i]
         attr = attrs[i]
         true_label = labels[i].item()
 
-        # Generar Grad-CAM
+        # Grad-CAM
         cam_img, pred_class = generate_gradcam(model, img, attr)
 
-        # Plot original
-        plt.subplot(2, n_examples, i+1)
+        # LIME
+        lime_img, _ = generate_lime_explanation(model, img, attr, pred_class)
+
+        # Visualización conjunta
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
         img_np = img.cpu().permute(1, 2, 0).numpy()
-        plt.imshow(img_np.clip(0, 1))
-        plt.title(f"True: {true_label}")
-        plt.axis('off')
+        axs[0].imshow(img_np.clip(0, 1))
+        axs[0].set_title(f"Original (True: {true_label})")
+        axs[0].axis('off')
 
-        # Plot GradCAM overlay
-        plt.subplot(2, n_examples, n_examples + i+1)
-        plt.imshow(cam_img)
-        plt.title(f"GradCAM: {pred_class}")
-        plt.axis('off')
+        axs[1].imshow(cam_img)
+        axs[1].set_title(f"Grad-CAM (Pred: {pred_class})")
+        axs[1].axis('off')
 
-    plt.suptitle("Grad-CAM en ejemplos de validación")
-    plt.tight_layout()
-    plt.show()
+        axs[2].imshow(lime_img)
+        axs[2].set_title(f"LIME (Pred: {pred_class})")
+        axs[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == '__main__':
