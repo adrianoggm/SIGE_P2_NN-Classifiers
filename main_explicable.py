@@ -33,6 +33,7 @@ def main():
     for class_name, count in class_counts.items():
         print(f"Clase {class_name}: {count}")
 
+    
     # Entrenar el modelo con búsqueda de hiperparámetros
     best_hparams = hyperparameter_tuning(train_dataset, val_dataset, full_dataset)
 

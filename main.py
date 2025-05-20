@@ -58,7 +58,7 @@ def main():
     #     n_trials=30  # Número de configuraciones a probar
     # )
 
-    print("Hiperparámetros óptimos:", best_config)
+    # print("Hiperparámetros óptimos:", best_config)
 
 
 if __name__ == '__main__':
