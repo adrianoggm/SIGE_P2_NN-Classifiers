@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import models
 from itertools import product
 from config import DEVICE, EPOCHS
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import wandb 
 from src.customCNN import CustomCNN
 import optuna
@@ -13,7 +14,7 @@ from optuna.trial import TrialState
 def get_model(num_classes, model_type='resnet'):
     if model_type == 'resnet':
         # ResNet-18 pretrained
-        model = models.resnet50(pretrained=True)
+        model = models.resnet18(pretrained=True)
         for param in model.parameters():
             param.requires_grad = False
         model.fc = nn.Sequential(
@@ -45,9 +46,21 @@ def get_model(num_classes, model_type='resnet'):
         raise ValueError(f"Modelo no soportado: {model_type}")
 
     return model.to(DEVICE)
-
-def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True, use_wandb=False):
+def train_model(model,
+                train_loader: DataLoader,
+                val_loader: DataLoader,
+                learning_rate: float,
+                optimizer_name: str,
+                save_best: bool = True,
+                use_wandb: bool = False):
+    """
+    Entrena el modelo y utiliza un scheduler ReduceLROnPlateau.
+    Si el scheduler reduce el learning rate dos veces consecutivas sin mejora,
+    detiene el entrenamiento.
+    """
     criterion = nn.CrossEntropyLoss()
+
+    # Configurar optimizador
     if optimizer_name == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     elif optimizer_name == 'sgd':
@@ -55,7 +68,18 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 
+    # Scheduler: reduce LR on plateau (val_accuracy), con paciencia de 1 época
+    scheduler = ReduceLROnPlateau(
+        optimizer,
+        mode='max',           # maximizamos val_accuracy
+        factor=0.15,           # reducir LR al 10%
+        patience=2,           # tras 1 época sin mejora
+        verbose=True          # mostrar en consola
+    )
+
     best_val_acc = 0.0
+    lr_reduction_count = 0
+    prev_lr = learning_rate
 
     for epoch in range(EPOCHS):
         model.train()
@@ -70,12 +94,11 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
             optimizer.step()
             running_loss += loss.item() * images.size(0)
 
-        # Calcular la pérdida media en el entrenamiento
         train_loss = running_loss / len(train_loader.dataset)
 
+        # Validación
         model.eval()
-        correct = 0
-        total = 0
+        correct = total = 0
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(DEVICE), labels.to(DEVICE)
@@ -85,21 +108,41 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
                 correct += (preds == labels).sum().item()
         val_accuracy = correct / total * 100
 
+        # Scheduler step basado en val_accuracy
+        scheduler.step(val_accuracy)
+        curr_lr = optimizer.param_groups[0]['lr']
 
+        # Chequear mejora
+        if val_accuracy > best_val_acc:
+            best_val_acc = val_accuracy
+            lr_reduction_count = 0
+            if save_best:
+                torch.save(model.state_dict(), 'best_model.pth')
+        else:
+            # Si el LR se redujo, incrementar contador
+            if curr_lr < prev_lr:
+                lr_reduction_count += 1
+                print(f"Learning rate reduced to {curr_lr:.6f} (count: {lr_reduction_count})")
+            # Detener si dos reducciones consecutivas sin mejora
+            if lr_reduction_count >= 2:
+                print("No improvement after 2 LR reductions. Stopping training early.")
+                break
+
+        prev_lr = curr_lr
+
+        # Logging y print
         print(f"Epoch [{epoch+1}/{EPOCHS}], "
               f"Train Loss: {train_loss:.4f}, "
               f"Validation Accuracy: {val_accuracy:.2f}%")
 
         if use_wandb:
+            import wandb
             wandb.log({
                 "epoch": epoch + 1,
                 "train_loss": train_loss,
-                "val_accuracy": val_accuracy
+                "val_accuracy": val_accuracy,
+                "lr": curr_lr
             })
-
-        if save_best and val_accuracy > best_val_acc:
-            best_val_acc = val_accuracy
-            torch.save(model.state_dict(), 'best_model.pth')
 
     return best_val_acc
 
