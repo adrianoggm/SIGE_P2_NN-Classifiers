@@ -46,18 +46,31 @@ def get_model(num_classes, model_type='resnet'):
         raise ValueError(f"Modelo no soportado: {model_type}")
 
     return model.to(DEVICE)
+
 def train_model(model,
                 train_loader: DataLoader,
                 val_loader: DataLoader,
                 learning_rate: float,
                 optimizer_name: str,
                 save_best: bool = True,
-                use_wandb: bool = False):
+                use_wandb: bool = False,
+                with_htuning: bool = False):
     """
     Entrena el modelo y utiliza un scheduler ReduceLROnPlateau.
     Si el scheduler reduce el learning rate dos veces consecutivas sin mejora,
     detiene el entrenamiento.
     """
+
+    if use_wandb and not with_htuning:
+        wandb.init(
+            project="clasification",
+            config={
+                "learning_rate": learning_rate,
+                "optimizer": optimizer_name,
+                "epochs": EPOCHS
+            },
+            reinit=True 
+        )
     criterion = nn.CrossEntropyLoss()
 
     # Configurar optimizador
@@ -136,13 +149,16 @@ def train_model(model,
               f"Validation Accuracy: {val_accuracy:.2f}%")
 
         if use_wandb:
-            import wandb
             wandb.log({
                 "epoch": epoch + 1,
                 "train_loss": train_loss,
                 "val_accuracy": val_accuracy,
                 "lr": curr_lr
             })
+
+    if use_wandb and not with_htuning:
+        wandb.log({"final_val_accuracy": best_val_acc})
+        wandb.finish()        
 
     return best_val_acc
 
@@ -165,7 +181,7 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
         print(f"\nProbando: lr={lr}, batch_size={batch_size}, optimizer={opt}, modelo={model_type}")
 
         wandb.init(
-            project="tuning-clasificacion",
+            project="clasification",
             config={
                 "learning_rate": lr,
                 "batch_size": batch_size,
@@ -185,7 +201,8 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
                               train_loader, val_loader,
                               learning_rate=lr,
                               optimizer_name=opt,
-                              use_wandb=True)
+                              use_wandb=True,
+                              with_htuning=True)
 
 
         wandb.log({"final_val_accuracy": val_acc}) 
@@ -217,7 +234,7 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
                 best_config['optimizer'])
 
     # Guardar el modelo final
-    wandb.init(project="tuning-clasificacion", name="final_model", config=best_config)
+    wandb.init(project="clasification", name="final_model", config=best_config)
     train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
     wandb.finish()
 
