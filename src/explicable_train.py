@@ -18,7 +18,7 @@ from src.explicable_data_loader import custom_collate
 class MultiModalResNet(nn.Module):
     def __init__(self, num_classes: int, attr_dim: int, attr_embed_dim: int = 256):
         super().__init__()
-        self.image_model = models.resnet18(pretrained=True)
+        self.image_model = models.resnet50(pretrained=True)
         num_ftrs = self.image_model.fc.in_features
         self.image_model.fc = nn.Identity()
 

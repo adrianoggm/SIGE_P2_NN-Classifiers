@@ -41,7 +41,7 @@ def main():
 
 
     
-    train_model(model, train_loader, val_loader, learning_rate=1e-3, optimizer_name='adam', save_best=True, use_wandb=True, with_htuning=False)
+    train_model(model, train_loader, val_loader, learning_rate=0.0006707369630642823, optimizer_name='adam', save_best=True, use_wandb=True, with_htuning=False)
 
     
     # best_hparams = hyperparameter_tuning(train_dataset,

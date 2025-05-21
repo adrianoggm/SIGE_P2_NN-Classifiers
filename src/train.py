@@ -13,10 +13,17 @@ from optuna.trial import TrialState
 
 def get_model(num_classes, model_type='resnet'):
     if model_type == 'resnet':
-        # ResNet-18 pretrained
-        model = models.resnet18(pretrained=True)
+        model = models.resnet50(pretrained=True)
+        # 1) congelamos TODO el backbone
         for param in model.parameters():
             param.requires_grad = False
+
+        # 2) descongelamos sólo las últimas capas residuales (layer4) y la cabeza
+        for name, param in model.named_parameters():
+            if name.startswith("layer4") or name.startswith("fc"):
+                param.requires_grad = True
+
+        # 3) redefinimos la cabeza
         model.fc = nn.Sequential(
             nn.Linear(model.fc.in_features, 512),
             nn.ReLU(),
@@ -25,13 +32,24 @@ def get_model(num_classes, model_type='resnet'):
         )
 
     elif model_type == 'efficientnet_b4':
-        # EfficientNet-B4 pretrained
         model = models.efficientnet_b4(pretrained=True)
-        # Congelamos backbone
+        # 1) congelamos todo
         for param in model.parameters():
             param.requires_grad = False
-        # Sustituimos la cabeza (classifier)
-        # En torchvision, classifier es [Dropout, Linear]
+
+        # 2) descongelamos los últimos bloques MBConv y la cabeza
+        #    (aquí tomamos, por ejemplo, los 3 últimos bloques)
+        num_blocks = len(model.features)
+        for idx, block in enumerate(model.features):
+            if idx >= num_blocks - 3:
+                for param in block.parameters():
+                    param.requires_grad = True
+
+        # 3) además, la cabeza entera
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
+        # 4) sustituimos la cabeza
         in_features = model.classifier[1].in_features
         model.classifier = nn.Sequential(
             nn.Dropout(p=0.5, inplace=True),
@@ -39,13 +57,13 @@ def get_model(num_classes, model_type='resnet'):
         )
 
     elif model_type == 'custom':
-        from src.customCNN import CustomCNN
         model = CustomCNN(num_classes)
 
     else:
         raise ValueError(f"Modelo no soportado: {model_type}")
 
     return model.to(DEVICE)
+
 
 def train_model(model,
                 train_loader: DataLoader,
@@ -86,7 +104,7 @@ def train_model(model,
         optimizer,
         mode='max',           # maximizamos val_accuracy
         factor=0.15,           # reducir LR al 10%
-        patience=2,           # tras 1 época sin mejora
+        patience=3,           # tras 1 época sin mejora
         verbose=True          # mostrar en consola
     )
 
@@ -137,7 +155,7 @@ def train_model(model,
                 lr_reduction_count += 1
                 print(f"Learning rate reduced to {curr_lr:.6f} (count: {lr_reduction_count})")
             # Detener si dos reducciones consecutivas sin mejora
-            if lr_reduction_count >= 2:
+            if lr_reduction_count >= 3:
                 print("No improvement after 2 LR reductions. Stopping training early.")
                 break
 

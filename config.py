@@ -11,11 +11,14 @@ IMAGES_TXT_PATH         = os.path.join(BASE_DIR, 'starting-package', 'data addit
 
 # Parámetros de entrenamiento
 BATCH_SIZE = 32
-EPOCHS = 15
+EPOCHS = 30
 LEARNING_RATE = 0.001
 
 # Variable de entorno para elegir el dataset principal (por defecto "x20")
-MAIN_DATASET = os.environ.get("MAIN_DATASET", "x20").lower()
+MAIN_DATASET = os.environ.get("MAIN_DATASET", "x200").lower()
 
 # Configuración del dispositivo
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+import torch_directml
+DEVICE = torch_directml.device()    # esto apuntará a tu GPU AMD vía DirectML
