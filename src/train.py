@@ -228,14 +228,15 @@ def hyperparameter_tuning(train_dataset, val_dataset, full_dataset,
     best_val_loader   = DataLoader(val_dataset,
                                    batch_size=best_config['batch_size'])
     final_model = get_model(num_classes, model_type=model_type)
+    
+    
+    # Guardar el modelo final
+    wandb.init(project="clasification", name="final_model", config=best_config)
     train_model(final_model,
                 best_train_loader, best_val_loader,
                 best_config['learning_rate'],
                 best_config['optimizer'])
 
-    # Guardar el modelo final
-    wandb.init(project="clasification", name="final_model", config=best_config)
-    train_model(final_model, best_train_loader, best_val_loader, best_config['learning_rate'], best_config['optimizer'])
     wandb.finish()
 
     return best_config
@@ -338,7 +339,8 @@ def objective(trial, train_dataset, val_dataset, num_classes, model_type='resnet
 
         # Manejar pruning (podado) de trials que no van bien
         if trial.should_prune():
-            wandb.finish()
+            wandb.log({"status": "pruned", "best_val_accuracy": best_val_acc})
+            wandb.finish(exit_code=1)  # Código de salida para runs podados
             raise optuna.exceptions.TrialPruned()
 
         if val_accuracy > best_val_acc:
