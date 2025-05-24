@@ -1,0 +1,42 @@
+{
+  "os": "Windows-10-10.0.26100-SP0",
+  "python": "CPython 3.10.11",
+  "startedAt": "2025-05-24T21:50:57.011618Z",
+  "program": "C:\\Users\\adria\\OneDrive\\Documentos\\SIGE_P2_NN-Classifiers\\main.py",
+  "codePath": "main.py",
+  "git": {
+    "remote": "https://github.com/adrianoggm/SIGE_P2_NN-Classifiers.git",
+    "commit": "040ce0e79dd6eec5cd603c6682e619474b058f4e"
+  },
+  "email": "e.adrianoggm@go.ugr.es",
+  "root": "C:\\Users\\adria\\OneDrive\\Documentos\\SIGE_P2_NN-Classifiers",
+  "host": "DESKTOP-TJA3HHE",
+  "executable": "C:\\Users\\adria\\OneDrive\\Documentos\\SIGE_P2_NN-Classifiers\\venv\\Scripts\\python.exe",
+  "codePathLocal": "main.py",
+  "cpu_count": 8,
+  "cpu_count_logical": 16,
+  "gpu": "NVIDIA GeForce RTX 3060",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1999451459584",
+      "used": "773779861504"
+    }
+  },
+  "memory": {
+    "total": "67809484800"
+  },
+  "cpu": {
+    "count": 8,
+    "countLogical": 16
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 3060",
+      "memoryTotal": "12884901888",
+      "cudaCores": 3584,
+      "architecture": "Ampere"
+    }
+  ],
+  "cudaVersion": "12.6"
+}

@@ -37,29 +37,31 @@ def main():
 
     # Configurar y entrenar el modelo
     num_classes = len(full_dataset.class_to_idx)
-    model = get_model(num_classes, model_type='resnet')
+    model = get_model(num_classes, model_type='custom')
 
 
+    #efficient 0.001
+#resnet 0.0006707369630642823
+    train_model(model, train_loader, val_loader, learning_rate=0.001, optimizer_name='adam', save_best=True, use_wandb=True, with_htuning=False)
+
+    """
+    best_hparams = hyperparameter_tuning(train_dataset,
+                                        val_dataset,
+                                        full_dataset,
+                                        model_type='efficientnet_b4',)
+    print("Hiperparámetros óptimos:", best_hparams)
+
+    best_config = hyperparameter_tuning_optuna(
+        train_dataset, 
+        val_dataset, 
+        full_dataset,
+        model_type='efficientnet_b4',
+        n_trials=30  # Número de configuraciones a probar
+    )
+
+    print("Hiperparámetros óptimos:", best_config)
     
-    train_model(model, train_loader, val_loader, learning_rate=0.0006707369630642823, optimizer_name='adam', save_best=True, use_wandb=True, with_htuning=False)
-
-    
-    # best_hparams = hyperparameter_tuning(train_dataset,
-    #                                     val_dataset,
-    #                                     full_dataset,
-    #                                     model_type='resnet',)
-    # print("Hiperparámetros óptimos:", best_hparams)
-
-    # best_config = hyperparameter_tuning_optuna(
-    #     train_dataset, 
-    #     val_dataset, 
-    #     full_dataset,
-    #     model_type='resnet',
-    #     n_trials=30  # Número de configuraciones a probar
-    # )
-
-    # print("Hiperparámetros óptimos:", best_config)
-
+    """
 
 if __name__ == '__main__':
     main()

@@ -13,39 +13,61 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from config import DEVICE, EPOCHS
 from src.explicable_data_loader import custom_collate
-
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 class MultiModalResNet(nn.Module):
-    def __init__(self, num_classes: int, attr_dim: int, attr_embed_dim: int = 256):
+    def __init__(self,
+                 num_classes: int,
+                 attr_dim: int,
+                 attr_embed_dim: int = 256,
+                 dropout_rate: float = 0.5):
         super().__init__()
+        # 1) Cargo ResNet-50 preentrenada
         self.image_model = models.resnet50(pretrained=True)
+        # 2) Congelo TODO el backbone
+        for param in self.image_model.parameters():
+            param.requires_grad = False
+
+        # 3) Descongelo sólo layer4 (último bloque residual)
+        for name, param in self.image_model.named_parameters():
+            if name.startswith("layer4"):
+                param.requires_grad = True
+
+        # 4) Sustituyo la cabeza original por Identity, para extraer sólo features
         num_ftrs = self.image_model.fc.in_features
         self.image_model.fc = nn.Identity()
 
+        # 5) Módulo de atributos (siempre entrenable)
         self.attr_fc = nn.Sequential(
             nn.Linear(attr_dim, attr_embed_dim),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5)
+            nn.Dropout(dropout_rate)
         )
 
+        # 6) Cabeza multimodal: fusión de imagen + atributos
         self.classifier = nn.Sequential(
             nn.Linear(num_ftrs + attr_embed_dim, 512),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(dropout_rate),
             nn.Linear(512, num_classes)
         )
 
     def forward(self, images: torch.Tensor, attrs: torch.Tensor) -> torch.Tensor:
-        img_feats = self.image_model(images)
-        attr_feats = self.attr_fc(attrs)
+        # Extraigo features de la imagen (ResNet-50 hasta layer4)
+        img_feats = self.image_model(images)          # requiere grad solo layer4
+        # Embedding de atributos
+        attr_feats = self.attr_fc(attrs)              # todo entrenable
+        # Fusiono y clasifico
         fused = torch.cat([img_feats, attr_feats], dim=1)
-        return self.classifier(fused)
+        return self.classifier(fused)   
 
 
-def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, save_best=True, use_wandb=False, with_htuning=False):
+def train_model(model, train_loader, val_loader,
+                learning_rate, optimizer_name,
+                save_best=True, use_wandb=False, with_htuning=False):
     if use_wandb and not with_htuning:
         wandb.init(
-            project="clasification-explicable",
+            project="clasificacion-explicable",
             config={
                 "learning_rate": learning_rate,
                 "optimizer": optimizer_name,
@@ -53,8 +75,9 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
             },
             reinit=True 
         )
-    
+
     criterion = nn.CrossEntropyLoss()
+    # --- optimizador ---
     if optimizer_name == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     elif optimizer_name == 'sgd':
@@ -62,13 +85,24 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
     else:
         raise ValueError(f'Unsupported optimizer: {optimizer_name}')
 
-    best_val_acc = 0.0
-    model.to(DEVICE)
+    # --- scheduler ReduceLROnPlateau igual que en tu ejemplo ---
+    scheduler = ReduceLROnPlateau(
+        optimizer,
+        mode='max',        # maximizamos val_accuracy
+        factor=0.15,       # lr_new = lr_old * 0.15
+        patience=3,        # tras 3 epochs sin mejora
+        verbose=True
+    )
 
+    best_val_acc = 0.0
+    lr_reduction_count = 0
+    prev_lr = learning_rate
+
+    model.to(DEVICE)
     for epoch in range(EPOCHS):
+        # -------- entrenamiento --------
         model.train()
         running_loss = 0.0
-
         for images, attrs, labels in train_loader:
             images, attrs, labels = images.to(DEVICE), attrs.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
@@ -77,11 +111,11 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * images.size(0)
-
         train_loss = running_loss / len(train_loader.dataset)
 
+        # -------- validación --------
         model.eval()
-        correct, total = 0, 0
+        correct = total = 0
         with torch.no_grad():
             for images, attrs, labels in val_loader:
                 images, attrs, labels = images.to(DEVICE), attrs.to(DEVICE), labels.to(DEVICE)
@@ -91,22 +125,41 @@ def train_model(model, train_loader, val_loader, learning_rate, optimizer_name, 
                 correct += (preds == labels).sum().item()
         val_accuracy = correct / total * 100
 
+        # actualizar scheduler y obtener lr actual
+        scheduler.step(val_accuracy)
+        curr_lr = optimizer.param_groups[0]['lr']
+
+        # comprobar si mejoró
+        if val_accuracy > best_val_acc:
+            best_val_acc = val_accuracy
+            lr_reduction_count = 0
+            if save_best:
+                torch.save(model.state_dict(), 'best_model_multimodal.pth')
+        else:
+            # si lr bajó sin mejora, incrementa contador
+            if curr_lr < prev_lr:
+                lr_reduction_count += 1
+                print(f"Learning rate reduced to {curr_lr:.6f} (count: {lr_reduction_count})")
+            # early-stopping tras 3 reducciones sin mejora
+            if lr_reduction_count >= 3:
+                print("No improvement after 3 LR reductions. Stopping training early.")
+                break
+
+        prev_lr = curr_lr
+
+        # logging y salida por consola
+        print(f"Epoch [{epoch+1}/{EPOCHS}]  Train Loss: {train_loss:.4f}  Val Acc: {val_accuracy:.2f}%  LR: {curr_lr:.6f}")
         if use_wandb:
             wandb.log({
                 "epoch": epoch + 1,
                 "train_loss": train_loss,
-                "val_accuracy": val_accuracy
+                "val_accuracy": val_accuracy,
+                "lr": curr_lr
             })
-
-        if save_best and val_accuracy > best_val_acc:
-            best_val_acc = val_accuracy
-            torch.save(model.state_dict(), 'best_model_multimodal.pth')
-
-        print(f'Epoch {epoch+1}/{EPOCHS} - Val Acc: {val_accuracy:.2f}%')
 
     if use_wandb and not with_htuning:
         wandb.log({"final_val_accuracy": best_val_acc})
-        wandb.finish()      
+        wandb.finish()
 
     return best_val_acc
 
