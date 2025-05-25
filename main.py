@@ -37,7 +37,7 @@ def main():
 
     # Configurar y entrenar el modelo
     num_classes = len(full_dataset.class_to_idx)
-    model = get_model(num_classes, model_type='custom')
+    model = get_model(num_classes, model_type='resnet')
 
 
     #efficient 0.001
